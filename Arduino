@@ -1,16 +1,25 @@
 #include <Arduino.h>
 #include <LiquidCrystal.h>
+
+//Pin	Full Form	Function
+//RS	Register Select	   Tells the LCD whether you are sending data (text to display) or a command (like clear screen).
+//EN	Enable	           Used to latch the data sent to the LCD. A high-to-low pulse tells the LCD to read the data/command.
+//D4	Data Pin 4	       These are the data lines used to send 4-bit data (in 4-bit mode).
+//D5	Data Pin 5	
+//D6	Data Pin 6	
+//D7	Data Pin 7
 LiquidCrystal lcd(D4, D5, D0, D1, D2, D3);
 
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
 #include <ESP8266HTTPClient.h>
 
+//Allows managing multiple WiFi credentials.
 ESP8266WiFiMulti wifiMulti;
 
 #define BOARDNO "010/"
 
-/Put your SSID & Password/
+
 const char* ssid = "iotdata";    // Enter SSID here
 const char* password = "12345678";  // Enter Password here
 
@@ -27,6 +36,10 @@ String inputString = "";         // a String to hold incoming data
 boolean stringComplete = false;  // whether the string is complete
 
 void setup() {
+
+//Reserves memory for serial input.
+//Sets up the LCD (16x2).
+//Displays website info and board number.
   inputString.reserve(200);
   lcd.begin(16, 2);
   // Print a message to the LCD.
@@ -44,6 +57,8 @@ void setup() {
   Serial.println(BOARDNO);
 
 
+//Initializes pins to LOW.
+
 digitalWrite(D0,0);
 digitalWrite(D1,0);
 digitalWrite(D2,0);
@@ -51,7 +66,7 @@ digitalWrite(D3,0);
 
 
   wifiMulti.addAP("iotdata", "12345678");
-  wifiMulti.addAP("lumisense", "iotboard");            // Listado de SSIDs
+  wifiMulti.addAP("lumisense", "iotboard");
 
   Serial.println("Connecting to SSID:iotdata");
   
@@ -65,7 +80,7 @@ digitalWrite(D3,0);
   Serial.println("");
   Serial.println("WiFi connected");
   Serial.println('\n');
-  Serial.print("SSID:\t\t");
+  Serial.print("SSID:\t\t");                 // Service Set Identifier
   Serial.println(WiFi.SSID());              // SSID al que se ha conectado.
   Serial.print("IP address:\t");
   Serial.println(WiFi.localIP());           // IP del ESP8266.
@@ -91,9 +106,9 @@ void loop()
 
 
 while (Serial.available()) {
-    char inChar = (char)Serial.read();
+    char inChar = (char)Serial.read();     //Read data byte-by-byte from Serial.
     // add it to the inputString:
-    if(inChar == '*')
+    if(inChar == '*')                     //Starts collecting data when * is received.
         lf=1;
 
         if(lf==1)
@@ -102,14 +117,14 @@ while (Serial.available()) {
      inputString += inChar;
 
      if(inChar==0x20)
-     inputString += '_';
+     inputString += '_';                 // Replace space by underscore
       
         }
 
      
         
     
-    if (inChar == '#') {
+    if (inChar == '#') {                  // end the string when # is received
       Serial.println(inputString);
       stringComplete = true;
       lf=0;
@@ -117,7 +132,7 @@ while (Serial.available()) {
   }
 
 
-
+//Reset
   if (stringComplete) {
     lc=0;
   //  Serial.println(inputString);
@@ -127,6 +142,10 @@ while (Serial.available()) {
   ptt3=inputString;
 inputString="";
   ptt=ptt2+ptt3+"&B=";
+
+//Read pin values
+//Reads digital pin values and appends to ippt.
+//Format: ~0~1~1~0...
 
   if(digitalRead(D0)==0)
     ippt="~0";
@@ -173,7 +192,7 @@ inputString="";
   else if(digitalRead(D8)==1)
     ippt=ippt+"1";*/
 
- ptt=ptt+ippt+"&C=";
+ ptt=ptt+ippt+"&C=";     //Final URL part: ...&B=~0~1~1~1~1~1~0~1&C=
 
 
  aval=analogRead(A0)/2;
@@ -185,14 +204,18 @@ inputString="";
 
 
 
-   sptt="A="+ptt3+"_B="+ippt+"_C="+aptt;
+   sptt="A="+ptt3+"_B="+ippt+"_C="+aptt;   //send to web server - data
 
-  Serial.println(sptt);
+  Serial.println(sptt);                   // print in web what will be sent.
     
       
   
    stringComplete = false;
    lf=0;
+//Sends POST request to formed URL.
+//Posts dummy content "A=Test" (not really used).
+//Gets response from the server.
+
   // Serial.println(ptt);
    http.begin(client,ptt);      //Specify request destination
    http.addHeader("Content-Type", "text/plain");  //Specify content-type header
