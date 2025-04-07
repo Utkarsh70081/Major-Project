@@ -1,0 +1,209 @@
+#include <Arduino.h>
+#include <LiquidCrystal.h>
+LiquidCrystal lcd(D4, D5, D0, D1, D2, D3);
+
+#include <ESP8266WiFi.h>
+#include <ESP8266WiFiMulti.h>
+#include <ESP8266HTTPClient.h>
+
+ESP8266WiFiMulti wifiMulti;
+
+#define BOARDNO "010/"
+
+/Put your SSID & Password/
+const char* ssid = "iotdata";    // Enter SSID here
+const char* password = "12345678";  // Enter Password here
+
+const char* server = "www.iotclouddata.com";
+int Sample;
+
+HTTPClient http;    //Declare object of class HTTPClient
+
+long l;
+
+WiFiClient client;
+
+String inputString = "";         // a String to hold incoming data
+boolean stringComplete = false;  // whether the string is complete
+
+void setup() {
+  inputString.reserve(200);
+  lcd.begin(16, 2);
+  // Print a message to the LCD.
+  lcd.print("iotclouddata.com ");
+  lcd.setCursor(0,1);
+  lcd.print("/mrlog/");
+  lcd.print(BOARDNO);
+  
+  Serial.begin(9600); // Starts the serial communication
+
+  delay(500);
+  
+  Serial.println();
+  Serial.print("http://www.iotclouddata.com/mrlog/");
+  Serial.println(BOARDNO);
+
+
+digitalWrite(D0,0);
+digitalWrite(D1,0);
+digitalWrite(D2,0);
+digitalWrite(D3,0);
+
+
+  wifiMulti.addAP("iotdata", "12345678");
+  wifiMulti.addAP("lumisense", "iotboard");            // Listado de SSIDs
+
+  Serial.println("Connecting to SSID:iotdata");
+  
+  int i = 0;
+  while (wifiMulti.run() != WL_CONNECTED) { // Wait for the Wi-Fi to connect: scan for Wi-Fi networks, and connect to the strongest of the networks above
+    delay(500);
+    Serial.print('.');
+  }
+
+  
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println('\n');
+  Serial.print("SSID:\t\t");
+  Serial.println(WiFi.SSID());              // SSID al que se ha conectado.
+  Serial.print("IP address:\t");
+  Serial.println(WiFi.localIP());           // IP del ESP8266.
+
+pinMode(D4,INPUT_PULLUP);
+pinMode(D5,INPUT_PULLUP);
+pinMode(D6,INPUT_PULLUP);
+pinMode(D7,INPUT_PULLUP);
+pinMode(D8,INPUT_PULLUP);
+
+
+}
+
+char lf;
+char oc;
+String ptt,ptt2,ptt3,ippt,aptt,sptt;
+int lc;
+int i;
+int aval;
+
+void loop() 
+{
+
+
+while (Serial.available()) {
+    char inChar = (char)Serial.read();
+    // add it to the inputString:
+    if(inChar == '*')
+        lf=1;
+
+        if(lf==1)
+        {
+    if((inChar != '*')&&(inChar!='#')&&(inChar!=10)&&(inChar!=13)&&(inChar!=0)&&(inChar!=0x20))
+     inputString += inChar;
+
+     if(inChar==0x20)
+     inputString += '_';
+      
+        }
+
+     
+        
+    
+    if (inChar == '#') {
+      Serial.println(inputString);
+      stringComplete = true;
+      lf=0;
+    }
+  }
+
+
+
+  if (stringComplete) {
+    lc=0;
+  //  Serial.println(inputString);
+    // clear the string:
+   ptt2="http://www.iotclouddata.com/mrlog/";
+   ptt2=ptt2+BOARDNO+"iot21.php?A=";
+  ptt3=inputString;
+inputString="";
+  ptt=ptt2+ptt3+"&B=";
+
+  if(digitalRead(D0)==0)
+    ippt="~0";
+  else if(digitalRead(D0)==1)
+    ippt="~1";
+
+  if(digitalRead(D1)==0)
+    ippt=ippt+"~0";
+  else if(digitalRead(D1)==1)
+    ippt=ippt+"~1";
+
+  if(digitalRead(D2)==0)
+    ippt=ippt+"~0";
+  else if(digitalRead(D2)==1)
+    ippt=ippt+"~1";
+
+  if(digitalRead(D3)==0)
+    ippt=ippt+"~0";
+  else if(digitalRead(D3)==1)
+    ippt=ippt+"~1";
+
+  if(digitalRead(D4)==0)
+    ippt=ippt+"~0";
+  else if(digitalRead(D4)==1)
+    ippt=ippt+"~1";
+
+  if(digitalRead(D5)==0)
+    ippt=ippt+"~0";
+  else if(digitalRead(D5)==1)
+    ippt=ippt+"~1";
+
+  if(digitalRead(D6)==0)
+    ippt=ippt+"~0";
+  else if(digitalRead(D6)==1)
+    ippt=ippt+"~1";
+
+  if(digitalRead(D7)==0)
+    ippt=ippt+"~0";
+  else if(digitalRead(D7)==1)
+    ippt=ippt+"~1";
+
+  /*if(digitalRead(D8)==0)
+    ippt=ippt+"0";
+  else if(digitalRead(D8)==1)
+    ippt=ippt+"1";*/
+
+ ptt=ptt+ippt+"&C=";
+
+
+ aval=analogRead(A0)/2;
+
+ aptt=String(aval);
+ 
+ ptt=ptt+aptt;
+
+
+
+
+   sptt="A="+ptt3+"_B="+ippt+"_C="+aptt;
+
+  Serial.println(sptt);
+    
+      
+  
+   stringComplete = false;
+   lf=0;
+  // Serial.println(ptt);
+   http.begin(client,ptt);      //Specify request destination
+   http.addHeader("Content-Type", "text/plain");  //Specify content-type header
+
+
+   int httpCode = http.POST("A=Test");   //Send the request
+   String payload1 = http.getString();                  //Get the response payload
+ 
+   Serial.println(httpCode);   //Print HTTP return code
+  // Serial.println(payload);    //Print request response payload
+ 
+   http.end();  //Close connection
+  delay(500);
+}
