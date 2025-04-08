@@ -75,7 +75,11 @@ public class xmgAugmentedVisionBridge
         public bool m_flippedHorizontaly;   // True if image is horizontally flipped 
     }
 
-    static public void PrepareImage(
+
+//Sets up a color image.
+//Handles platform-specific horizontal flipping (Unity needs it sometimes).
+//for white part
+static public void PrepareImage(
         ref xmgImage dstimage,
         int width, int height,
         int colortype,
@@ -94,6 +98,7 @@ public class xmgAugmentedVisionBridge
         dstimage.m_imageData = ptrdata;
     }
 
+//Similar but always sets color type to 0 (grayscale).
     static public void PrepareGrayImage(
         ref xmgImage dstimage,
         int width, int height,
@@ -111,9 +116,9 @@ public class xmgAugmentedVisionBridge
     [StructLayout(LayoutKind.Sequential)]
     public struct xmgMarkerInfo
     {
-        public int markerID;
-        public Vector3 position;
-        public Vector3 euler;
+        public int markerID;                    //The marker’s ID.
+        public Vector3 position;               //Position in 3D space.
+        public Vector3 euler;                  //for euler angle Yan,Pitch, Roll
         public Quaternion rotation;
     }
 
@@ -135,7 +140,7 @@ public class xmgAugmentedVisionBridge
 
 
 #if (UNITY_EDITOR || UNITY_STANDALONE || UNITY_ANDROID)
-    [DllImport("xzimgAugmentedVision")]
+    [DllImport("xzimgAugmentedVision")]                     //Initializes marker detection with camera resolution and FOV.
 	public static extern int xzimgMarkerInitialize(int CaptureWidth, int CaptureHeight, int iProcessingWidth, int iProcessingHeight, float fovXRadian);
 #elif UNITY_IPHONE
 	[DllImport ("__Internal")] 
@@ -149,30 +154,31 @@ public class xmgAugmentedVisionBridge
 
 #if (UNITY_EDITOR || UNITY_STANDALONE|| UNITY_ANDROID)
     [DllImport("xzimgAugmentedVision")]
-    public static extern void xzimgMarkerRelease();
+    public static extern void xzimgMarkerRelease();               //Cleans up marker detection.
 #elif UNITY_IPHONE
 	[DllImport ("__Internal")] 
-    public static extern void xzimgMarkerRelease();
+    public static extern void xzimgMarkerRelease();               //Cleans up marker detection.
 #elif UNITY_WEBGL
 	[DllImport ("__Internal")] 
-	public static extern void xzimgMarkerRelease();
+	public static extern void xzimgMarkerRelease();           //Cleans up marker detection.
 #endif
     
     // --------------------------------------------------------------------------------------------------------------------------
 
 #if (UNITY_EDITOR || UNITY_STANDALONE || UNITY_ANDROID)
-    [DllImport("xzimgAugmentedVision")]
-    public static extern void xzimgMarkerSetActiveIndices(ref int arrIndices, ref float arrMarkerWidth, int nbrOfIndices);
+    [DllImport("xzimgAugmentedVision")]    ////Tells the system which markers to look for and their sizes.
+    public static extern void xzimgMarkerSetActiveIndices(ref int arrIndices, ref float arrMarkerWidth, int nbrOfIndices);             //Tells the system which markers to look for and their sizes.
 #elif UNITY_IPHONE
 	[DllImport ("__Internal")] 
-	public static extern void xzimgMarkerSetActiveIndices(ref int arrIndices, ref float arrMarkerWidth, int nbrOfIndices);
+	public static extern void xzimgMarkerSetActiveIndices(ref int arrIndices, ref float arrMarkerWidth, int nbrOfIndices);        //Tells the system which markers to look for and their sizes.
 #elif UNITY_WEBGL
 	[DllImport ("__Internal")] 
-	public static extern void xzimgMarkerSetActiveIndices(ref int arrIndices, ref float arrMarkerWidth, int nbrOfIndices);
+	public static extern void xzimgMarkerSetActiveIndices(ref int arrIndices, ref float arrMarkerWidth, int nbrOfIndices);        //Tells the system which markers to look for and their sizes.
 #endif
 
     // --------------------------------------------------------------------------------------------------------------------------
 
+//Main function that processes an image and detects markers.
 #if (UNITY_EDITOR || UNITY_STANDALONE|| UNITY_ANDROID)
     [DllImport("xzimgAugmentedVision")]
 	public static extern int xzimgMarkerDetect([In][Out] ref xmgImage imageIn, int markerType, int filterStrenght);
